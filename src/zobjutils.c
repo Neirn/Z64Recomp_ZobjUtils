@@ -4,6 +4,9 @@
 #include "PR/gbi.h"
 #include "recomputils.h"
 #include "z64animation.h"
+#include "stdbool.h"
+
+#define LOCAL_ARRAY_BYTE_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 u32 readU32(u8 array[], u32 offset) {
     return *(u32 *)(&array[offset]);
@@ -96,7 +99,7 @@ void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset) {
 
         Gfx *repointedDisplayList;
 
-        LodLimb **limbs = (LodLimb **)(flexHeader->sh.segment);
+        LodLimb **limbs = flexHeader->sh.segment;
 
         recomp_printf("Limb count: %d\n", flexHeader->sh.limbCount);
         recomp_printf("First limb entry location: 0x%x\n", limbs);
@@ -112,10 +115,43 @@ void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset) {
     }
 }
 
-s32 getFlexSkeletonHeaderOffset(u8 zobj[], int zobjSize) {
+bool isBytesEqual(const void *ptr1, const void *ptr2, size_t num) {
+    u8 *a = ptr1;
+    u8 *b = ptr2;
+
+    for (int i = 0; i < num; i++) {
+        if (a[i] != b[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+s32 getFlexSkeletonHeaderOffset(const u8 zobj[], size_t zobjSize) {
     // Link should always have 0x15 limbs where 0x12 have display lists
     // so, if a hierarchy exists, then this string must appear at least once
+    u8 lowerHeaderBytes[] = {0x15, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00};
 
-    recomp_printf("getSkeletonHeaderOffset function is not yet implemented.");
+    const LOWER_HEADER_SIZE = LOCAL_ARRAY_BYTE_SIZE(lowerHeaderBytes);
+
+    const FLEX_HEADER_SIZE = 0xC;
+
+    int index = FLEX_HEADER_SIZE - LOWER_HEADER_SIZE;
+
+    int endIndex = zobjSize - FLEX_HEADER_SIZE;
+
+    int flexSkelHeaderOffset = -1;
+
+    while (index < endIndex) {
+        if (isBytesEqual(&zobj[index], &lowerHeaderBytes[0], LOWER_HEADER_SIZE)) {
+            // account for first four bytes of header
+            return index - 4;
+        }
+
+        // header must be aligned
+        index += 4;
+    }
+
     return -1;
 }

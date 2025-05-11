@@ -19,6 +19,6 @@ void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset);
 
 // Finds index of FlexSkeletonHeader in binary.
 // Returns -1 if no skeleton header can be found
-s32 getFlexSkeletonHeaderOffset(u8 zobj[], int zobjSize);
+s32 getFlexSkeletonHeaderOffset(u8 zobj[], size_t zobjSize);
 
 #endif
