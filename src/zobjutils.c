@@ -5,17 +5,11 @@
 #include "recomputils.h"
 
 u32 readU32(u8 array[], u32 offset) {
-    return ((u32)(array[offset]) << 24) |
-           ((u32)(array[offset + 1]) << 16) |
-           ((u32)(array[offset + 2]) << 8) |
-           ((u32)(array[offset + 3]));
+    return *(u32 *)(&array[offset]);
 }
 
 void writeU32(u8 array[], u32 offset, u32 value) {
-    array[offset] = value >> 24;
-    array[offset + 1] = value >> 16;
-    array[offset + 2] = value >> 8;
-    array[offset + 3] = value;
+    *(u32 *)(&array[offset]) = value;
 }
 
 void repointF3DCommand(u8 zobj[], u32 newBase, u32 commandOffset, u8 targetSegment) {
