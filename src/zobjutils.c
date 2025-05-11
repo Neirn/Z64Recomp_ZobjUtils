@@ -3,6 +3,7 @@
 #include "libc/string.h"
 #include "PR/gbi.h"
 #include "recomputils.h"
+#include "z64animation.h"
 
 u32 readU32(u8 array[], u32 offset) {
     return *(u32 *)(&array[offset]);
@@ -12,7 +13,7 @@ void writeU32(u8 array[], u32 offset, u32 value) {
     *(u32 *)(&array[offset]) = value;
 }
 
-void repointF3DCommand(u8 zobj[], u32 newBase, u32 commandOffset, u8 targetSegment) {
+void repointF3DCommand(u8 zobj[], u32 commandOffset, u8 targetSegment) {
 
     GfxCommand *command = (GfxCommand *)(&zobj[commandOffset]);
 
@@ -29,13 +30,13 @@ void repointF3DCommand(u8 zobj[], u32 newBase, u32 commandOffset, u8 targetSegme
     switch (opcode) {
     case G_DL:
         if (segment == targetSegment) {
-            repointDisplayList(zobj, newBase, dataOffset, targetSegment);
+            repointDisplayList(zobj, dataOffset, targetSegment);
         }
     case G_VTX:
     case G_MTX:
     case G_SETTIMG:
         if (segment == targetSegment) {
-            repointedOffset = newBase + dataOffset;
+            repointedOffset = (u32)&zobj[0] + dataOffset;
             command->values.word1 = repointedOffset;
             recomp_printf("Repointing 0x0%x -> 0x%x\n", segmentedDataOffset, repointedOffset);
         }
@@ -46,7 +47,7 @@ void repointF3DCommand(u8 zobj[], u32 newBase, u32 commandOffset, u8 targetSegme
     }
 }
 
-void repointDisplayList(u8 zobj[], u32 newBase, u32 displayListStartOffset, u8 targetSegment) {
+void repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment) {
     u32 offset = displayListStartOffset;
     u8 segment;
 
@@ -70,7 +71,7 @@ void repointDisplayList(u8 zobj[], u32 newBase, u32 displayListStartOffset, u8 t
         case G_SETTIMG:
             segment = zobj[offset + 4];
             if (segment == targetSegment) {
-                repointF3DCommand(zobj, newBase, offset, targetSegment);
+                repointF3DCommand(zobj, offset, targetSegment);
             }
             break;
 
@@ -82,16 +83,16 @@ void repointDisplayList(u8 zobj[], u32 newBase, u32 displayListStartOffset, u8 t
     }
 }
 
-void repointSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u32 newBase) {
+void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset) {
 
     // repoint only if segmented
     if (zobj[skeletonHeaderOffset] == 0x06) {
 
         u32 firstLimbOffset = SEGMENT_OFFSET(readU32(zobj, skeletonHeaderOffset));
 
-        writeU32(zobj, skeletonHeaderOffset, firstLimbOffset + newBase);
-
         FlexSkeletonHeader *flexHeader = (FlexSkeletonHeader *)(&zobj[skeletonHeaderOffset]);
+
+        writeU32(zobj, skeletonHeaderOffset, firstLimbOffset + (u32)&zobj[0]);
 
         Gfx *repointedDisplayList;
 
@@ -111,7 +112,10 @@ void repointSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u32 newBase) {
     }
 }
 
-s32 getSkeletonHeaderOffset(u8 zobj[], int zobjSize) {
+s32 getFlexSkeletonHeaderOffset(u8 zobj[], int zobjSize) {
+    // Link should always have 0x15 limbs where 0x12 have display lists
+    // so, if a hierarchy exists, then this string must appear at least once
+
     recomp_printf("getSkeletonHeaderOffset function is not yet implemented.");
     return -1;
 }
