@@ -142,8 +142,6 @@ s32 getFlexSkeletonHeaderOffset(const u8 zobj[], size_t zobjSize) {
 
     int endIndex = zobjSize - FLEX_HEADER_SIZE;
 
-    int flexSkelHeaderOffset = -1;
-
     while (index < endIndex) {
         if (isBytesEqual(&zobj[index], &lowerHeaderBytes[0], LOWER_HEADER_SIZE)) {
             // account for first four bytes of header
