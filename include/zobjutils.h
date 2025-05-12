@@ -6,7 +6,7 @@
 // Repoints F3DZEX2 command to be relative to binary's location in RAM.
 //
 // assumes zobj points to the start of the binary and that segmented addresses are relative to it.
-void repointF3DCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress);
+void repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress);
 
 // Repoints F3DZEX2 display list to be relative to object's location in RAM.
 //

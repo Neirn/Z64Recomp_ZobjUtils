@@ -16,7 +16,7 @@ void writeU32(u8 array[], u32 offset, u32 value) {
     *(u32 *)(&array[offset]) = value;
 }
 
-void repointF3DCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress) {
+void repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress) {
 
     GfxCommand *command = (GfxCommand *)(&zobj[commandOffset]);
 
@@ -74,7 +74,7 @@ void repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment,
         case G_SETTIMG:
             segment = zobj[offset + 4];
             if (segment == targetSegment) {
-                repointF3DCommand(zobj, offset, targetSegment, newBaseAddress);
+                repointGfxCommand(zobj, offset, targetSegment, newBaseAddress);
             }
             break;
 
