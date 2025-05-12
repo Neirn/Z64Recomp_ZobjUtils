@@ -86,10 +86,10 @@ void repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment,
     }
 }
 
-void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u32 newBaseAddress) {
+void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, u32 newBaseAddress) {
 
     // repoint only if segmented
-    if (zobj[skeletonHeaderOffset] == 0x06) {
+    if (zobj[skeletonHeaderOffset] == targetSegment) {
 
         u32 firstLimbOffset = SEGMENT_OFFSET(readU32(zobj, skeletonHeaderOffset));
 
