@@ -8,7 +8,7 @@
 
 #define LOCAL_ARRAY_BYTE_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-u32 readU32(u8 array[], u32 offset) {
+u32 readU32(const u8 array[], u32 offset) {
     return *(u32 *)(&array[offset]);
 }
 
