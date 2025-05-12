@@ -11,7 +11,7 @@ void repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBa
 // Repoints F3DZEX2 display list to be relative to object's location in RAM.
 //
 // Assumes zobj is to the start of the binary.
-void repointDisplayList(u8 zobj[], u32 displayListOffset, u8 targetSegmen, u32 newBaseAddress);
+void repointDisplayList(u8 zobj[], u32 displayListOffset, u8 targetSegment, u32 newBaseAddress);
 
 // Repoints FlexSkeleton to be relative to binary's location in RAM
 // assumes zobj points to the start of the binary and that segmented addresses are relative to it.
