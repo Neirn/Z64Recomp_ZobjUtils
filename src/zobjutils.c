@@ -129,7 +129,7 @@ bool isBytesEqual(const void *ptr1, const void *ptr2, size_t num) {
     return true;
 }
 
-s32 getFlexSkeletonHeaderOffset(const u8 zobj[], size_t zobjSize) {
+s32 getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zobjSize) {
     // Link should always have 0x15 limbs where 0x12 have display lists
     // so, if a hierarchy exists, then this string must appear at least once
     u8 lowerHeaderBytes[] = {0x15, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00};
@@ -138,9 +138,9 @@ s32 getFlexSkeletonHeaderOffset(const u8 zobj[], size_t zobjSize) {
 
     const FLEX_HEADER_SIZE = 0xC;
 
-    int index = FLEX_HEADER_SIZE - LOWER_HEADER_SIZE;
+    u32 index = FLEX_HEADER_SIZE - LOWER_HEADER_SIZE;
 
-    int endIndex = zobjSize - FLEX_HEADER_SIZE;
+    u32 endIndex = zobjSize - FLEX_HEADER_SIZE;
 
     while (index < endIndex) {
         if (isBytesEqual(&zobj[index], &lowerHeaderBytes[0], LOWER_HEADER_SIZE)) {
