@@ -1,13 +1,17 @@
-#include "rt64_extended_gbi.h"
+#include "global.h"
 #include "libc/string.h"
-#include "PR/gbi.h"
+#include "modding.h"
 #include "recomputils.h"
-#include "z64animation.h"
+#include "rt64_extended_gbi.h"
 #include "stdbool.h"
+#include "z64animation.h"
 
 #define LOCAL_ARRAY_BYTE_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-u32 readU32(const u8 array[], u32 offset){
+void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, void *newBase);
+void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, void *newBase);
+
+u32 readU32(const u8 array[], u32 offset) {
     return (u32)(array[offset + 0]) << 24 |
            (u32)(array[offset + 1]) << 16 |
            (u32)(array[offset + 2]) << 8 |
@@ -21,7 +25,8 @@ void writeU32(u8 array[], u32 offset, u32 value) {
     array[offset + 3] = (value & 0x000000FF);
 }
 
-RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress) {
+RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, void *newBase) {
+    u32 newBaseAddress = (u32)newBase;
 
     GfxCommand *command = (GfxCommand *)(&zobj[commandOffset]);
 
@@ -38,7 +43,7 @@ RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 
     switch (opcode) {
     case G_DL:
         if (segment == targetSegment) {
-            ZobjUtils_repointDisplayList(zobj, dataOffset, targetSegment, newBaseAddress);
+            ZobjUtils_repointDisplayList(zobj, dataOffset, targetSegment, newBase);
         }
     case G_VTX:
     case G_MTX:
@@ -55,8 +60,10 @@ RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 
     }
 }
 
-RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, u32 newBaseAddress) {
+RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, void *newBase) {
+
     u32 offset = displayListStartOffset;
+
     u8 segment;
 
     u8 opcode;
@@ -91,7 +98,8 @@ RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartO
     }
 }
 
-RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, u32 newBaseAddress) {
+RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, void *newBase) {
+    u32 newBaseAddress = (u32)newBase;
 
     // repoint only if segmented
     if (zobj[skeletonHeaderOffset] == targetSegment) {
@@ -104,7 +112,7 @@ RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOf
 
         Gfx *repointedDisplayList;
 
-        LodLimb **limbs = (&zobj[firstLimbOffset]);
+        LodLimb **limbs = (LodLimb **)(&zobj[firstLimbOffset]);
 
         recomp_printf("Limb count: %d\n", flexHeader->sh.limbCount);
         recomp_printf("First limb entry location: 0x%x\n", limbs);
@@ -122,10 +130,10 @@ RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOf
 }
 
 bool isBytesEqual(const void *ptr1, const void *ptr2, size_t num) {
-    u8 *a = ptr1;
-    u8 *b = ptr2;
+    const u8 *a = ptr1;
+    const u8 *b = ptr2;
 
-    for (int i = 0; i < num; i++) {
+    for (size_t i = 0; i < num; i++) {
         if (a[i] != b[i]) {
             return false;
         }
@@ -139,9 +147,9 @@ RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zob
     // so, if a hierarchy exists, then this string must appear at least once
     u8 lowerHeaderBytes[] = {0x15, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00};
 
-    const LOWER_HEADER_SIZE = LOCAL_ARRAY_BYTE_SIZE(lowerHeaderBytes);
+    const u8 LOWER_HEADER_SIZE = LOCAL_ARRAY_BYTE_SIZE(lowerHeaderBytes);
 
-    const FLEX_HEADER_SIZE = 0xC;
+    const u8 FLEX_HEADER_SIZE = 0xC;
 
     u32 index = FLEX_HEADER_SIZE - LOWER_HEADER_SIZE;
 
