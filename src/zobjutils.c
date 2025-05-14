@@ -166,5 +166,7 @@ RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zob
         index += 4;
     }
 
+    // Returning a signed value here isn't ideal
+    // but in practice there should never be a zobj passed in that's >2 GB in size
     return -1;
 }
