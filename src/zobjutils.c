@@ -1,4 +1,3 @@
-#include "zobjutils.h"
 #include "rt64_extended_gbi.h"
 #include "libc/string.h"
 #include "PR/gbi.h"
@@ -22,7 +21,7 @@ void writeU32(u8 array[], u32 offset, u32 value) {
     array[offset + 3] = (value & 0x000000FF);
 }
 
-void repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress) {
+RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress) {
 
     GfxCommand *command = (GfxCommand *)(&zobj[commandOffset]);
 
@@ -56,7 +55,7 @@ void repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBa
     }
 }
 
-void repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, u32 newBaseAddress) {
+RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, u32 newBaseAddress) {
     u32 offset = displayListStartOffset;
     u8 segment;
 
@@ -92,7 +91,7 @@ void repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment,
     }
 }
 
-void repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, u32 newBaseAddress) {
+RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, u32 newBaseAddress) {
 
     // repoint only if segmented
     if (zobj[skeletonHeaderOffset] == targetSegment) {
@@ -135,7 +134,7 @@ bool isBytesEqual(const void *ptr1, const void *ptr2, size_t num) {
     return true;
 }
 
-s32 getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zobjSize) {
+RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zobjSize) {
     // Link should always have 0x15 limbs where 0x12 have display lists
     // so, if a hierarchy exists, then this string must appear at least once
     u8 lowerHeaderBytes[] = {0x15, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00};
