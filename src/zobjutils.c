@@ -8,8 +8,8 @@
 
 #define LOCAL_ARRAY_BYTE_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, void *newBase);
-void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, void *newBase);
+void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase);
+void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, const void *newBase);
 
 u32 readU32(const u8 array[], u32 offset) {
     return (u32)(array[offset + 0]) << 24 |
@@ -25,7 +25,7 @@ void writeU32(u8 array[], u32 offset, u32 value) {
     array[offset + 3] = (value & 0x000000FF);
 }
 
-RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, void *newBase) {
+RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase) {
     u32 newBaseAddress = (u32)newBase;
 
     GfxCommand *command = (GfxCommand *)(&zobj[commandOffset]);
@@ -60,7 +60,7 @@ RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 
     }
 }
 
-RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, void *newBase) {
+RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, const void *newBase) {
 
     u32 offset = displayListStartOffset;
 
@@ -98,7 +98,7 @@ RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartO
     }
 }
 
-RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, void *newBase) {
+RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, const void *newBase) {
     u32 newBaseAddress = (u32)newBase;
 
     // repoint only if segmented

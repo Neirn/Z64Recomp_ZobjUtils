@@ -7,17 +7,17 @@
 // Repoints F3DZEX2 command to be relative to binary's location in RAM.
 //
 // assumes zobj points to the start of the binary and that segmented addresses are relative to it.
-RECOMP_IMPORT("mm_recomp_zobj_utils", void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, u32 newBaseAddress));
+RECOMP_IMPORT("mm_recomp_zobj_utils", void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase));
 
 // Repoints F3DZEX2 display list to be relative to object's location in RAM.
 //
 // assumes zobj points to the start of the binary and that segmented addresses are relative to it.
-RECOMP_IMPORT("mm_recomp_zobj_utils", void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, u32 newBaseAddress));
+RECOMP_IMPORT("mm_recomp_zobj_utils", void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, const void *newBase));
 
 // Repoints FlexSkeleton to be relative to binary's location in RAM
 //
 // assumes zobj points to the start of the binary and that segmented addresses are relative to it.
-RECOMP_IMPORT("mm_recomp_zobj_utils", void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, u32 newBaseAddress));
+RECOMP_IMPORT("mm_recomp_zobj_utils", void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOffset, u8 targetSegment, const void *newBase));
 
 // Finds index of FlexSkeletonHeader in binary.
 //
