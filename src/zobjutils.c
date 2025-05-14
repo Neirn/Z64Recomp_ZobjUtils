@@ -42,9 +42,6 @@ RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 
 
     switch (opcode) {
     case G_DL:
-        if (segment == targetSegment) {
-            ZobjUtils_repointDisplayList(zobj, dataOffset, targetSegment, newBase);
-        }
     case G_VTX:
     case G_MTX:
     case G_SETTIMG:
@@ -78,6 +75,10 @@ RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartO
             break;
 
         case G_DL:
+            if (segment == targetSegment) {
+                ZobjUtils_repointDisplayList(zobj, offset, targetSegment, newBase);
+            }
+            
             if (zobj[offset + 1] == G_DL_NOPUSH) {
                 isEndDl = true;
             }
