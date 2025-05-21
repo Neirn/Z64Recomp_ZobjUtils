@@ -28,13 +28,13 @@ void writeU32(u8 array[], u32 offset, u32 value) {
 RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase) {
     u32 newBaseAddress = (u32)newBase;
 
-    GfxCommand *command = (GfxCommand *)(&zobj[commandOffset]);
+    Gfx *command = (Gfx *)(&zobj[commandOffset]);
 
     u32 opcode = zobj[commandOffset];
 
     u8 segment = zobj[commandOffset + 4];
 
-    u32 segmentedDataOffset = command->values.word1;
+    u32 segmentedDataOffset = command->words.w1;
 
     u32 dataOffset = SEGMENT_OFFSET(segmentedDataOffset);
 
@@ -47,7 +47,7 @@ RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 
     case G_SETTIMG:
         if (segment == targetSegment) {
             repointedOffset = newBaseAddress + dataOffset;
-            command->values.word1 = repointedOffset;
+            command->words.w1 = repointedOffset;
             recomp_printf("Repointing 0x0%x -> 0x%x\n", segmentedDataOffset, repointedOffset);
         }
         break;
@@ -70,29 +70,30 @@ RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartO
         opcode = zobj[offset];
 
         switch (opcode) {
-        case G_ENDDL:
-            isEndDl = true;
-            break;
-
-        case G_DL:
-            if (segment == targetSegment) {
-                ZobjUtils_repointDisplayList(zobj, offset, targetSegment, newBase);
-            }
-            
-            if (zobj[offset + 1] == G_DL_NOPUSH) {
+            case G_ENDDL:
                 isEndDl = true;
-            }
-        case G_VTX:
-        case G_MTX:
-        case G_SETTIMG:
-            segment = zobj[offset + 4];
-            if (segment == targetSegment) {
-                ZobjUtils_repointGfxCommand(zobj, offset, targetSegment, newBase);
-            }
-            break;
+                break;
 
-        default:
-            break;
+            case G_DL:
+                segment = zobj[offset + 4];
+                if (segment == targetSegment) {
+                    ZobjUtils_repointDisplayList(zobj, SEGMENT_OFFSET(readU32(zobj, offset + 4)), targetSegment, newBase);
+                }
+                
+                if (zobj[offset + 1] == G_DL_NOPUSH) {
+                    isEndDl = true;
+                }
+            case G_VTX:
+            case G_MTX:
+            case G_SETTIMG:
+                segment = zobj[offset + 4];
+                if (segment == targetSegment) {
+                    ZobjUtils_repointGfxCommand(zobj, offset, targetSegment, newBase);
+                }
+                break;
+
+            default:
+                break;
         }
 
         offset += 8;
@@ -110,8 +111,6 @@ RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOf
         FlexSkeletonHeader *flexHeader = (FlexSkeletonHeader *)(&zobj[skeletonHeaderOffset]);
 
         writeU32(zobj, skeletonHeaderOffset, firstLimbOffset + newBaseAddress);
-
-        Gfx *repointedDisplayList;
 
         LodLimb **limbs = (LodLimb **)(&zobj[firstLimbOffset]);
 
