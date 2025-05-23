@@ -5,6 +5,7 @@
 #include "rt64_extended_gbi.h"
 #include "stdbool.h"
 #include "z64animation.h"
+#include "helpers.h"
 
 #define LOCAL_ARRAY_BYTE_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
@@ -129,19 +130,6 @@ RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOf
     }
 }
 
-bool isBytesEqual(const void *ptr1, const void *ptr2, size_t num) {
-    const u8 *a = ptr1;
-    const u8 *b = ptr2;
-
-    for (size_t i = 0; i < num; i++) {
-        if (a[i] != b[i]) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zobjSize) {
     // Link should always have 0x15 limbs where 0x12 have display lists
     // so, if a hierarchy exists, then this string must appear at least once
@@ -156,7 +144,7 @@ RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zob
     u32 endIndex = zobjSize - FLEX_HEADER_SIZE;
 
     while (index < endIndex) {
-        if (isBytesEqual(&zobj[index], &lowerHeaderBytes[0], LOWER_HEADER_SIZE)) {
+        if (isMemEqual(&zobj[index], &lowerHeaderBytes[0], LOWER_HEADER_SIZE)) {
             // account for first four bytes of header
             return index - 4;
         }
