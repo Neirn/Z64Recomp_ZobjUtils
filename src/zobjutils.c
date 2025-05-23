@@ -7,8 +7,6 @@
 #include "z64animation.h"
 #include "helpers.h"
 
-#define LOCAL_ARRAY_BYTE_SIZE(a) (sizeof(a) / sizeof(a[0]))
-
 void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase);
 void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, const void *newBase);
 
@@ -135,7 +133,7 @@ RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zob
     // so, if a hierarchy exists, then this string must appear at least once
     u8 lowerHeaderBytes[] = {0x15, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00};
 
-    const u8 LOWER_HEADER_SIZE = LOCAL_ARRAY_BYTE_SIZE(lowerHeaderBytes);
+    const u8 LOWER_HEADER_SIZE = ARRAY_COUNT(lowerHeaderBytes);
 
     const u8 FLEX_HEADER_SIZE = 0xC;
 
