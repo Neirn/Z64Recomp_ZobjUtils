@@ -1,6 +1,7 @@
 #include "recomputils.h"
 #include "vector.h"
 #include "libc/string.h"
+#include "helpers.h"
 
 struct Vector {
     size_t elementSize;
@@ -123,4 +124,14 @@ void Vector_remove(Vector *v, size_t index) {
     for (size_t i = index; i < v->count - 1; ++i) {
         Vector_set(v, i, Vector_get(v, i + 1));
     }
+}
+
+bool Vector_has(Vector *v, void *element) {
+    for (size_t i = 0; i < v->count; ++i) {
+        if (isMemEqual(element, Vector_get(v, i), v->elementSize)) {
+            return true;
+        }
+    }
+
+    return false;
 }

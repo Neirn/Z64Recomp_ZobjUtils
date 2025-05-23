@@ -16,5 +16,6 @@ void *Vector_start(Vector *v);
 void *Vector_end(Vector *v);
 void Vector_set(Vector *v, size_t index, void *element);
 void *Vector_get(Vector *v, size_t index);
+bool Vector_has(Vector *v, void *element);
 
 #endif
