@@ -3,12 +3,12 @@
 #include "libc/string.h"
 #include "helpers.h"
 
-struct Vector {
+typedef struct Vector {
     size_t elementSize;
     size_t capacity;
     size_t count;
     void *data;
-};
+} Vector;
 
 Vector *Vector_create(size_t elementSize) {
     Vector *v = recomp_alloc(sizeof(Vector));
@@ -124,6 +124,8 @@ void Vector_remove(Vector *v, size_t index) {
     for (size_t i = index; i < v->count - 1; ++i) {
         Vector_set(v, i, Vector_get(v, i + 1));
     }
+
+    v->count--;
 }
 
 bool Vector_has(Vector *v, void *element) {
