@@ -7,7 +7,7 @@
 #include "z64animation.h"
 #include "helpers.h"
 #include "recompdata.h"
-#include "vector.h"
+#include "vectorU32.h"
 
 typedef struct ZobjUtils_DisplayListExtractionResult ZobjUtils_DisplayListExtractionResult;
 
@@ -166,8 +166,52 @@ void insertOrReplaceIfBigger(U32ValueHashmapHandle handle, u32 key, u32 value) {
     }
 }
 
-u32 findTexSize(u8* buffer, size_t startIndex) {
+u32 findTexSize(u8* buffer, size_t startIndex, u8 targetSegment) {
+    u8 textureFormat = buffer[startIndex + 1] >> 5;
+    u8 pixelBitSize = (buffer[startIndex + 1] >> 3) & 0x3;
+    u16 textureWidth = readU32(buffer, startIndex) & 0x00007F;
+
+    u32 bitsPerPixel = 4 * pixelBitSize * pixelBitSize;
+    u32 bytesPerPixel = bitsPerPixel / 8;
+
+    VectorU32 returnStack = VectorU32_create(8);
+
+    size_t i = startIndex + 8;
     
+    bool isSearchStopped = false;
+
+    u32 result = 0;
+
+    while (!isSearchStopped) {
+
+        switch(buffer[i]) {
+            case G_ENDDL:
+                if (VectorU32_count(returnStack) == 0) {
+                    isSearchStopped = true;
+                }
+                else {
+                    i = returnStack[VectorU32_count(&returnStack) - 1];
+                    Vector_pop(returnStack);
+                }
+
+                break;
+            
+            case G_SETTIMG:
+                isSearchStopped = true;
+                break;
+            
+            case G_DL:
+                if (buffer[i + 4] == targetSegment) {
+                    if (buffer[i + 1] == G_DL_PUSH) {
+                        VectorU32_push(&returnStack, SEGMENT_OFFSET(readU32(buffer, i + 4)));
+                    }
+                }
+                break;
+
+        }
+
+        i += 8;
+    }
 }
 
 RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLists(void *zobj, void *newBase, u8 targetSegment, Gfx *displayLists[], size_t numDisplayLists) {
@@ -179,29 +223,28 @@ RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLis
     U32ValueHashmapHandle vertices = recomputil_create_u32_value_hashmap();
     U32ValueHashmapHandle textures = recomputil_create_u32_value_hashmap();
 
-    Vector* dlsToVisit = Vector_create(sizeof(u32));
+    VectorU32 dlsToVisit = VectorU32_create(0);
 
     for (size_t i = 0; i < numDisplayLists; ++i) {
         Gfx* curr = displayLists[i];
         u8 seg = SEGMENT_NUMBER(curr);
         u32 offset = SEGMENT_OFFSET(curr);
         if (seg == targetSegment && !recomputil_u32_hashset_contains(visitedDls, offset)) {
-            Vector_push(dlsToVisit, &offset);
+            VectorU32_push(&dlsToVisit, offset);
             recomputil_u32_hashset_insert(visitedDls, offset);
         }
     }
 
     // first pass: gather all relevant offsets for display lists, textures, palettes, and vertex data
-    u32 *dlOffsets = (u32 *)Vector_start(dlsToVisit);
 
-    Vector* dlDependencies = Vector_create(sizeof(u32));
+    VectorU32 dlDependencies = VectorU32_create(0);
 
-    Vector* deReturnStack = Vector_create(sizeof(u32));
+    VectorU32 returnStack = VectorU32_create(0);
 
-    for (size_t i = 0; i < Vector_count(dlsToVisit); ++i) {
+    for (size_t i = 0; i < VectorU32_count(dlsToVisit); ++i) {
         bool isEnd = false;
 
-        u32 startOffset = dlOffsets[i];
+        u32 startOffset = dlsToVisit[i];
 
         size_t i = startOffset;
 
@@ -209,7 +252,7 @@ RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLis
 
         dlDat.buffer = &buffer[startOffset];
 
-        Vector_clear(dlDependencies);
+        VectorU32_clear(dlDependencies);
 
         while (!isEnd) {
 
@@ -236,9 +279,8 @@ RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLis
                         break;
 
                     case G_DL:
-
                         if (seg == targetSegment && !recomputil_u32_hashset_contains(visitedDls, segAddr)) {
-                            Vector_push(dlsToVisit, &segAddr);
+                            VectorU32_push(&dlsToVisit, segAddr);
                             recomputil_u32_hashset_insert(visitedDls, segAddr);
                         }
 
@@ -248,7 +290,7 @@ RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLis
                         break;
                     
                     case G_SETTIMG:
-                        len = (upper & 0x0FF000) >> 12;
+                        len = ((upper & 0x0FF000) >> 12) * sizeof(Vtx);
                         insertOrReplaceIfBigger(vertices, lower, len);
                         break;
                     
@@ -263,8 +305,9 @@ RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLis
         }
     }
 
-    Vector_destroy(dlDependencies);
-    Vector_destroy(dlsToVisit);
+    VectorU32_destroy(&dlDependencies);
+    VectorU32_destroy(&dlsToVisit);
+    VectorU32_destroy(&returnStack);
     recomputil_destroy_u32_hashset(visitedDls);
     recomputil_destroy_u32_memory_hashmap(vertices);
     recomputil_destroy_u32_memory_hashmap(textures);
