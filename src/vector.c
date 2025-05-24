@@ -87,7 +87,7 @@ void Vector_push(Vector *v, void *newElement) {
 
     char *data = (char *)v->data;
 
-    memcpy(&data[v->elementSize * v->count], newElement, v->elementSize);
+    Vector_set(v, v->count - 1, newElement);
 
     v->count++;
 }
@@ -134,4 +134,8 @@ bool Vector_has(Vector *v, void *element) {
     }
 
     return false;
+}
+
+void Vector_clear(Vector *v) {
+    v->count = 0;
 }

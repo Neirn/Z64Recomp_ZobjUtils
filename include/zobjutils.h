@@ -24,4 +24,6 @@ RECOMP_IMPORT("mm_recomp_zobjutils", void ZobjUtils_repointFlexSkeleton(u8 zobj[
 // Returns -1 if no skeleton header can be found
 RECOMP_IMPORT("mm_recomp_zobjutils", s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zobjSize));
 
+typedef struct ZobjUtils_DisplayListExtractionResult ZobjUtils_DisplayListExtractionResult;
+
 #endif

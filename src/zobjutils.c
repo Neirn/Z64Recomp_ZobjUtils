@@ -3,26 +3,16 @@
 #include "modding.h"
 #include "recomputils.h"
 #include "rt64_extended_gbi.h"
-#include "stdbool.h"
+#include "libc/stdbool.h"
 #include "z64animation.h"
 #include "helpers.h"
+#include "recompdata.h"
+#include "vector.h"
+
+typedef struct ZobjUtils_DisplayListExtractionResult ZobjUtils_DisplayListExtractionResult;
 
 void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase);
 void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartOffset, u8 targetSegment, const void *newBase);
-
-u32 readU32(const u8 array[], u32 offset) {
-    return (u32)(array[offset + 0]) << 24 |
-           (u32)(array[offset + 1]) << 16 |
-           (u32)(array[offset + 2]) << 8 |
-           (u32)(array[offset + 3]);
-}
-
-void writeU32(u8 array[], u32 offset, u32 value) {
-    array[offset + 0] = (value & 0xFF000000) >> 24;
-    array[offset + 1] = (value & 0x00FF0000) >> 16;
-    array[offset + 2] = (value & 0x0000FF00) >> 8;
-    array[offset + 3] = (value & 0x000000FF);
-}
 
 RECOMP_EXPORT void ZobjUtils_repointGfxCommand(u8 zobj[], u32 commandOffset, u8 targetSegment, const void *newBase) {
     u32 newBaseAddress = (u32)newBase;
@@ -154,4 +144,128 @@ RECOMP_EXPORT s32 ZobjUtils_getFlexSkeletonHeaderOffset(const u8 zobj[], u32 zob
     // Returning a signed value here isn't ideal
     // but in practice there should never be a zobj passed in that's >2 GB in size
     return -1;
+}
+
+typedef struct {
+    u8 *buffer;
+    size_t size;
+    u32 *dependencies;
+} DisplayListData;
+
+void insertOrReplaceIfBigger(U32ValueHashmapHandle handle, u32 key, u32 value) {
+    if (recomputil_u32_value_hashmap_contains(handle, key)) {
+        u32 currentVal;
+        recomputil_u32_value_hashmap_get(handle, key, currentVal);
+        if (value > currentVal) {
+            recomputil_u32_value_hashmap_erase(handle, key);
+            recomputil_u32_value_hashmap_insert(handle, key, value);
+        }
+
+    } else {
+        recomputil_u32_value_hashmap_insert(handle, key, value);
+    }
+}
+
+u32 findTexSize(u8* buffer, size_t startIndex) {
+    
+}
+
+RECOMP_EXPORT ZobjUtils_DisplayListExtractionResult *ZobjUtils_extractDisplayLists(void *zobj, void *newBase, u8 targetSegment, Gfx *displayLists[], size_t numDisplayLists) {
+    u8* buffer = (u8 *)zobj;
+
+    U32HashsetHandle visitedDls = recomputil_create_u32_hashset();
+
+    // map offset from start of zobj to size of these elements
+    U32ValueHashmapHandle vertices = recomputil_create_u32_value_hashmap();
+    U32ValueHashmapHandle textures = recomputil_create_u32_value_hashmap();
+
+    Vector* dlsToVisit = Vector_create(sizeof(u32));
+
+    for (size_t i = 0; i < numDisplayLists; ++i) {
+        Gfx* curr = displayLists[i];
+        u8 seg = SEGMENT_NUMBER(curr);
+        u32 offset = SEGMENT_OFFSET(curr);
+        if (seg == targetSegment && !recomputil_u32_hashset_contains(visitedDls, offset)) {
+            Vector_push(dlsToVisit, &offset);
+            recomputil_u32_hashset_insert(visitedDls, offset);
+        }
+    }
+
+    // first pass: gather all relevant offsets for display lists, textures, palettes, and vertex data
+    u32 *dlOffsets = (u32 *)Vector_start(dlsToVisit);
+
+    Vector* dlDependencies = Vector_create(sizeof(u32));
+
+    Vector* deReturnStack = Vector_create(sizeof(u32));
+
+    for (size_t i = 0; i < Vector_count(dlsToVisit); ++i) {
+        bool isEnd = false;
+
+        u32 startOffset = dlOffsets[i];
+
+        size_t i = startOffset;
+
+        DisplayListData dlDat;
+
+        dlDat.buffer = &buffer[startOffset];
+
+        Vector_clear(dlDependencies);
+
+        while (!isEnd) {
+
+            u8 opcode = buffer[i];
+
+            u32 upper = readU32(buffer, i);
+            u32 lower = readU32(buffer, i + 4);
+
+            u8 seg = SEGMENT_OFFSET(upper);
+
+            u32 segAddr = SEGMENT_OFFSET(lower);
+
+            u32 newDlOffset;
+
+            u32 len;
+            u32 len2;
+
+            u32 texAddr = SEGMENT_ADDR(targetSegment, 0);
+
+            if (seg == targetSegment) {
+                switch (opcode) {
+                    case G_ENDDL:
+                        isEnd = true;
+                        break;
+
+                    case G_DL:
+
+                        if (seg == targetSegment && !recomputil_u32_hashset_contains(visitedDls, segAddr)) {
+                            Vector_push(dlsToVisit, &segAddr);
+                            recomputil_u32_hashset_insert(visitedDls, segAddr);
+                        }
+
+                        if (buffer[i + 1] == G_DL_NOPUSH) {
+                            isEnd = true;
+                        }
+                        break;
+                    
+                    case G_SETTIMG:
+                        len = (upper & 0x0FF000) >> 12;
+                        insertOrReplaceIfBigger(vertices, lower, len);
+                        break;
+                    
+                    case G_OBJ_LOADTXTR:
+
+                    default:
+                        break;
+                }
+            }
+
+            i += 8;
+        }
+    }
+
+    Vector_destroy(dlDependencies);
+    Vector_destroy(dlsToVisit);
+    recomputil_destroy_u32_hashset(visitedDls);
+    recomputil_destroy_u32_memory_hashmap(vertices);
+    recomputil_destroy_u32_memory_hashmap(textures);
 }
