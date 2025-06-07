@@ -86,6 +86,7 @@ RECOMP_EXPORT void ZobjUtils_repointDisplayList(u8 zobj[], u32 displayListStartO
             case G_VTX:
             case G_MTX:
             case G_SETTIMG:
+            case G_MOVEMEM:
                 segment = zobj[offset + 4];
                 if (segment == targetSegment) {
                     ZobjUtils_repointGfxCommand(zobj, offset, targetSegment, newBase);
@@ -114,8 +115,8 @@ RECOMP_EXPORT void ZobjUtils_repointFlexSkeleton(u8 zobj[], u32 skeletonHeaderOf
 
         LodLimb **limbs = (LodLimb **)(&zobj[firstLimbOffset]);
 
-        recomp_printf("Limb count: %d\n", flexHeader->sh.limbCount);
-        recomp_printf("First limb entry location: 0x%x\n", limbs);
+        //recomp_printf("Limb count: %d\n", flexHeader->sh.limbCount);
+        //recomp_printf("First limb entry location: 0x%x\n", limbs);
 
         LodLimb *limb;
         for (u8 i = 0; i < flexHeader->sh.limbCount; i++) {
